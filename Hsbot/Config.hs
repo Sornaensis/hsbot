@@ -37,7 +37,7 @@ defaultTLSConfig = TLSConfig
                     , cipher_AES128_SHA256
                     , cipher_AES256_SHA256 ]
     , sslVerify   = True
-    , sslLogging  = def Logging }
+    , sslLogging  = def }
      
 
 noSSL :: TLSConfig
