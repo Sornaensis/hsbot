@@ -47,6 +47,7 @@ data BotState = BotState
     , botHooks    :: [Chan Message]
     , botChannels :: [String]
     , botNickname :: String
+    , botPrefix   :: Maybe String
     }
 
 -- The Plugin monad
@@ -72,6 +73,7 @@ data BotStatus = BotExit | BotReload String | BotRestart (String, Maybe String) 
 -- Config
 data Config = Config
     { configErrors    :: Maybe String
+    , configCmdPrefix :: Maybe String
     , configTLS       :: TLSConfig
     , configAddress   :: String
     , configPort      :: PortID

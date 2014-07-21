@@ -12,6 +12,7 @@ import Control.Concurrent
 import qualified Data.List as L
 import Control.Monad.Reader
 import qualified Network.IRC as IRC
+import Data.Maybe 
 
 import Hsbot.Types
 
@@ -44,9 +45,15 @@ getCommand (IRC.Message _ _ (_:msg:[])) = getCommandFrom $ words (S.unpack msg)
     getCommandFrom :: [String] -> Env IO [String]
     getCommandFrom (cmd:stuff) = do
         currentBotState <- asks envBotState >>= liftIO . readMVar
-        if botNickname currentBotState `L.isPrefixOf` cmd
+        let
+            prefix = botPrefix currentBotState
+        if botNickname currentBotState `L.isPrefixOf` cmd 
             then return stuff
-            else return []
+            else case isJust prefix of
+                    True  -> if (fromJust prefix) `L.isPrefixOf` cmd
+                                then return $ drop (L.length (fromJust prefix)) cmd : stuff
+                                else return []
+                    False -> return []
     getCommandFrom _ = return []
 getCommand _ = return []
 

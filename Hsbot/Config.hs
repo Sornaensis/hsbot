@@ -18,6 +18,7 @@ defaultConfig = Config
     , configAddress   = "localhost"
     , configPort      = PortNumber 6667
     , configPassword  = Nothing
+    , configCmdPrefix = Nothing 
     , configAccess    = []
     , configChannels  = ["#hsbot"]
     , configNicknames = ["hsbot"]

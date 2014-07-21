@@ -18,6 +18,7 @@ import Data.Typeable
 import qualified Network.IRC as IRC
 import System.Environment.XDG.BaseDir
 import System.Random
+import System.Log.Logger
 
 import Hsbot.Message
 import Hsbot.Types

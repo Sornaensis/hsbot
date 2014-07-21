@@ -76,6 +76,7 @@ runHsbot die_msgs = do
             config   = envConfig env
             nickname = head $ configNicknames config
             channels = configChannels config
+            cmdPrfx  = configCmdPrefix config 
         case configPassword config of
             Just pass -> liftIO . sendStr env connhdl tlsCtx . strEncode $ IRC.Message Nothing (S.pack "PASS") [(S.pack pass)]
             Nothing -> return ()
@@ -83,6 +84,7 @@ runHsbot die_msgs = do
         liftIO . sendStr env connhdl tlsCtx . strEncode $ IRC.user (S.pack nickname) (S.pack hostname) (S.pack "*") $ S.pack (configRealname config)
         -- Finally we set the new bot state
         asks envBotState >>= liftIO . flip putMVar BotState { botPlugins  = M.empty
+                                                            , botPrefix   = cmdPrfx 
                                                             , botAccess   = configAccess config
                                                             , botHooks    = []
                                                             , botChannels = channels
@@ -106,7 +108,6 @@ runHsbot die_msgs = do
         liftIO $ threadDelay 1000000
         -- Then we join channels
         mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx . strEncode . IRC.joinChan $ S.pack channel) channels
-        mapM_ (\channel -> liftIO $ debugM "Hsbot.Core" $ strEncode . IRC.joinChan $ S.pack channel) channels
         -- We advertise any death message we should
         mapM_ (\msg -> mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx $ S.unpack . IRC.encode $ IRC.Message Nothing (S.pack "PRIVMSG") [S.pack channel, S.pack msg]) channels) die_msgs
         -- We wait for the quit signal
