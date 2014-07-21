@@ -33,8 +33,9 @@ data BotEnv = BotEnv
     , envQuitMv      :: MVar BotStatus
     , envThreadIdsMv :: MVar [ThreadId]
     , envConfig      :: Config
-    , envTLS         :: Maybe TLSParams
-    , envTLSCtx      :: Maybe (TLSCtx Handle)
+    , envTLS         :: Maybe ClientParams
+    , envTLSCtx      :: Maybe Context
+    --, envTLSCtx      :: Maybe (TLSCtx Handle)
     }
 
 -- The bot monad
@@ -94,6 +95,6 @@ data TLSConfig = TLSConfig
     , sslVersions :: [Network.TLS.Version]
     , sslCiphers  :: [Network.TLS.Cipher]
     , sslVerify   :: Bool
-    , sslLogging  :: TLSLogging
+    , sslLogging  :: Logging
     }
 

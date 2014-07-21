@@ -11,7 +11,9 @@ import Control.Concurrent
 import Control.Exception (IOException, catch)
 import Control.Monad.Reader
 import Control.Monad.State
+import Data.Default
 import qualified Data.ByteString.Lazy.UTF8 as L
+import qualified Data.ByteString.Char8 as S
 import qualified Data.List as L
 import qualified Network.IRC as IRC
 import Network.TLS
@@ -48,7 +50,7 @@ hasAccess (Just mask) right =
       | otherwise = False
 
 -- Helpers
-sendStr :: BotEnv -> Handle -> Maybe (TLSCtx Handle) -> String -> IO ()
+sendStr :: BotEnv -> Handle -> Maybe Context -> String -> IO ()
 sendStr env _ (Just ctx) msg = sendData ctx (L.fromString $ msg ++ "\r\n") `catch` handleIOException env ("sendStr " ++ msg)
 sendStr env handle Nothing msg = hPutStrLn handle (msg ++ "\r\n") `catch` handleIOException env ("sendStr " ++ msg)
 
@@ -60,12 +62,31 @@ handleIOException env msg ioException = do
     return ()
 
 -- TLS utils
-initTLSEnv :: TLSConfig -> IO TLSParams
-initTLSEnv ssl = do
-    let versions = sslVersions ssl
-        ciphers  = sslCiphers ssl
-        logging  = sslLogging ssl
-    return $ defaultParams { pAllowedVersions = versions
-                           , pCiphers = ciphers
-                           , pLogging = logging }
+initTLSEnv :: Config -> IO ClientParams
+initTLSEnv config = do
+    let versions = sslVersions (configTLS config)
+        ciphers  = sslCiphers  (configTLS config)
+        logging  = sslLogging  (configTLS config)
+    return $ ClientParams {  
+                clientUseMaxFragmentLength    = Nothing
+               ,clientServerIdentification    = (configAddress config, S.pack "") 
+               ,clientUseServerNameIndication = False
+               ,clientWantSessionResume       = Nothing
+               ,clientShared                  = def Shared
+               ,clientHooks                   = ClientHooks {
+                                                  onCertificateRequest = onCertificateRequest (def ClientHooks)
+                                                 ,onNPNServerSuggest   = onNPNServerSuggest   (def ClientHooks)
+                                                 ,onServerCertificate  = onCertTLSno
+                                                }
+               ,clientSupported               = Supported {
+                                                  supportedVersions             = versions
+                                                 ,supportedCiphers              = ciphers
+                                                 ,supportedCompressions         = [nullCompression]
+                                                 ,supportedHashSignatures       = supportedHashSignatures (def Supported) 
+                                                 ,supportedSecureRenegotiation  = True
+                                                 ,supportedSession              = True
+                                                }
+            }
 
+
+onCertTLSno _ _ _ _ = return []

@@ -7,6 +7,7 @@ module Hsbot.Config
 import Network
 import Network.TLS
 import Network.TLS.Extra
+import Data.Default
 
 import Hsbot.Types
 
@@ -35,7 +36,8 @@ defaultTLSConfig = TLSConfig
                     , cipher_AES128_SHA256
                     , cipher_AES256_SHA256 ]
     , sslVerify   = True
-    , sslLogging  = defaultLogging }
+    , sslLogging  = def Logging }
+     
 
 noSSL :: TLSConfig
 noSSL = defaultTLSConfig { sslOn = False }

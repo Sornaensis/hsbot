@@ -11,6 +11,8 @@ import Prelude hiding (catch)
 import Hsbot.Message
 import Hsbot.Types
 
+import qualified Data.ByteString.Char8 as S
+
 -- | The ping plugin identity
 ping :: PluginId
 ping = PluginId
@@ -23,7 +25,7 @@ thePing = forever $ readMsg >>= eval
   where
     eval :: Message -> Plugin (Env IO) ()
     eval (IncomingMsg msg)
-        | IRC.msg_command msg == "PING" = writeMsg . OutgoingMsg . IRC.Message Nothing "PONG" $ IRC.msg_params msg
+        | IRC.msg_command msg == (S.pack "PING") = writeMsg . OutgoingMsg . IRC.Message Nothing (S.pack "PONG") $ IRC.msg_params msg
         | otherwise = return ()
     eval _ = return ()
 

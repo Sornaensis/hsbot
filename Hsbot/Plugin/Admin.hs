@@ -12,6 +12,8 @@ import Hsbot.Message
 import Hsbot.Types
 import Hsbot.Utils
 
+import qualified Data.ByteString.Char8 as S
+
 -- | The Admin plugin identity
 admin :: PluginId
 admin = PluginId
@@ -24,7 +26,7 @@ theAdmin = forever $ readMsg >>= eval
   where
     eval :: Message -> Plugin (Env IO) ()
     eval (IncomingMsg msg)
-        | IRC.msg_command msg == "PRIVMSG" = do
+        | IRC.msg_command msg == (S.pack "PRIVMSG") = do
             cmdArgs <- lift $ getCommand msg
             case cmdArgs of
                 "exit":"help":_ -> answerMsg msg "exit hsbot."
