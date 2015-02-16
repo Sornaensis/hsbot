@@ -2,6 +2,8 @@ module Hsbot.Message
     ( answerMsg
     , getChannel
     , getCommand
+    , getCommandFilter
+    , getCommandNoFilter 
     , getDestination
     , getSender
     , readMsg
@@ -13,10 +15,10 @@ import qualified Data.List as L
 import Control.Monad.Reader
 import qualified Network.IRC as IRC
 import Data.Maybe 
+import Data.ByteString.UTF8 as U
 
 import Hsbot.Types
 
-import qualified Data.ByteString.Char8 as S
 
 -- Plugin Utils
 readMsg :: Plugin (Env IO) Message
@@ -28,19 +30,22 @@ writeMsg msg = asks pluginMaster >>= liftIO . flip writeChan msg
 
 answerMsg :: IRC.Message -> String -> Plugin (Env IO) ()
 answerMsg _ [] = return ()
-answerMsg (IRC.Message (Just (IRC.NickName nick _ _)) _ (channel:_)) msg
-    | head (S.unpack channel) == '#' = writeMsg . OutgoingMsg $ IRC.Message Nothing (S.pack "PRIVMSG") [channel, S.pack msg]
-    | otherwise = writeMsg . OutgoingMsg $ IRC.Message Nothing (S.pack "PRIVMSG") [nick, S.pack msg]
+answerMsg (IRC.Message (Just (IRC.NickName nick _ _)) cmd (channel:_)) msg
+    | head (U.toString channel) == '#' = writeMsg . OutgoingMsg $ IRC.Message Nothing cmd [channel, U.fromString msg]
+    | otherwise = writeMsg . OutgoingMsg $ IRC.Message Nothing cmd [nick, U.fromString msg]
 answerMsg _ _ = return ()
 
 -- | Get the channel a message has been posted on
 getChannel :: IRC.Message -> String
-getChannel (IRC.Message _ _ (channel:_)) = S.unpack channel
+getChannel (IRC.Message _ _ (channel:_)) = U.toString channel
 getChannel _ = ""
 
 -- | Get the command in the IRC message if there is one
 getCommand :: IRC.Message -> Env IO [String]
-getCommand (IRC.Message _ _ (_:msg:[])) = getCommandFrom $ words (S.unpack msg)
+getCommand = getCommandFilter
+
+getCommandFilter :: IRC.Message -> Env IO [String]
+getCommandFilter (IRC.Message _ _ [_,msg]) = getCommandFrom $ words $ U.toString msg
   where
     getCommandFrom :: [String] -> Env IO [String]
     getCommandFrom (cmd:stuff) = do
@@ -49,21 +54,25 @@ getCommand (IRC.Message _ _ (_:msg:[])) = getCommandFrom $ words (S.unpack msg)
             prefix = botPrefix currentBotState
         if botNickname currentBotState `L.isPrefixOf` cmd 
             then return stuff
-            else case isJust prefix of
-                    True  -> if (fromJust prefix) `L.isPrefixOf` cmd
-                                then return $ drop (L.length (fromJust prefix)) cmd : stuff
-                                else return []
-                    False -> return []
+            else if isJust prefix 
+                   then return (if fromJust prefix `L.isPrefixOf` cmd 
+                                  then L.drop (L.length (fromJust prefix)) cmd : stuff 
+                                  else cmd:stuff) 
+                   else return []
     getCommandFrom _ = return []
-getCommand _ = return []
+getCommandFilter _ = return []
+
+getCommandNoFilter :: IRC.Message -> Env IO [String]
+getCommandNoFilter (IRC.Message _ _ [_,msg]) = return $ words $ U.toString msg
+getCommandNoFilter _ = return []
 
 -- | Get the sender of a message
 getSender :: IRC.Message -> String
-getSender (IRC.Message (Just (IRC.NickName nick _ _)) _ _) = S.unpack nick
+getSender (IRC.Message (Just (IRC.NickName nick _ _)) _ _) = U.toString nick
 getSender _ = ""
 
 -- | Get the destination of a message
 getDestination :: IRC.Message -> String
-getDestination (IRC.Message _ _ (dest:_:[])) = S.unpack dest
+getDestination (IRC.Message _ _ [dest, _]) = U.toString dest
 getDestination _ = ""
 

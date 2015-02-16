@@ -22,7 +22,7 @@ defaultConfig = Config
     , configAccess    = []
     , configChannels  = ["#hsbot"]
     , configNicknames = ["hsbot"]
-    , configRealname  = "The One True bot, with it's haskell soul."
+    , configRealname  = "The One True bot, with its haskell soul."
     , configPlugins   = [] }
 
 defaultTLSConfig :: TLSConfig

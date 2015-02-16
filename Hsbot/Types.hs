@@ -1,6 +1,10 @@
 module Hsbot.Types
     ( AccessList (..)
     , AccessRight (..)
+    , adminAccess
+    , operatorAccess
+    , halfopAccess
+    , userAccess 
     , Bot
     , BotState (..)
     , BotStatus (..)
@@ -10,6 +14,8 @@ module Hsbot.Types
     , Message (..)
     , Plugin
     , PluginEnv (..)
+    , PluginCmds
+    , PluginCmd (..)
     , PluginId (..)
     , TLSConfig (..)
     ) where
@@ -35,7 +41,6 @@ data BotEnv = BotEnv
     , envConfig      :: Config
     , envTLS         :: Maybe ClientParams
     , envTLSCtx      :: Maybe Context
-    --, envTLSCtx      :: Maybe (TLSCtx Handle)
     }
 
 -- The bot monad
@@ -62,7 +67,37 @@ data PluginEnv = PluginEnv
 data PluginId = PluginId
     { pluginName :: String
     , pluginEp   :: Plugin (Env IO) ()
+    , pluginCmds :: Maybe PluginCmds
     }
+
+-- Plugin help system
+type PluginCmds = [PluginCmd]
+
+data PluginCmd = PluginCmd 
+    { command     :: String
+    , cmdIsPrefix :: Bool
+    , cmdFunc     :: IRC.Message -> [String] -> Plugin (Env IO) ()
+    , cmdPerm     :: Maybe AccessRight
+    , cmdHelp     :: String
+    } 
+
+data AccessRight = Admin 
+                 | Operator 
+                 | HalfOp 
+                 | User 
+                 deriving (Eq, Show, Ord)
+
+adminAccess :: [AccessRight]
+adminAccess = [Admin, Operator, HalfOp, User]
+
+operatorAccess :: [AccessRight]
+operatorAccess = [Operator, HalfOp, User]
+
+halfopAccess :: [AccessRight]
+halfopAccess = [HalfOp, User]
+
+userAccess :: [AccessRight]
+userAccess = [User]
 
 -- Messaging
 data Message = IncomingMsg IRC.Message
@@ -84,8 +119,6 @@ data Config = Config
     , configRealname  :: String
     , configPlugins   :: [PluginId]
     }
-
-data AccessRight = Admin | JoinPart | Kick | Say deriving (Eq, Show)
 
 data AccessList = AccessList
     { accessMask :: IRC.Prefix

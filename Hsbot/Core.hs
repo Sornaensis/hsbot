@@ -14,7 +14,7 @@ import Network
 import qualified Network.IRC as IRC
 import Network.BSD (getHostName)
 import Network.TLS
-import Prelude hiding (catch)
+--import Prelude 
 import System.IO
 import System.Log.Logger
 import Text.ParserCombinators.Parsec
@@ -23,7 +23,7 @@ import Hsbot.Plugin
 import Hsbot.Types
 import Hsbot.Utils
 
-import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.UTF8 as U
 
 
 initHsbot :: Config -> IO BotEnv
@@ -56,9 +56,6 @@ initHsbot config = do
                   , envTLS         = tls
                   , envTLSCtx      = tlsCtx }
 
-strEncode :: IRC.Message -> String
-strEncode = S.unpack . IRC.encode
-
 runHsbot :: [String] -> Env IO BotStatus
 runHsbot die_msgs = do
     botNotInitialized <- asks envBotState >>= liftIO . isEmptyMVar
@@ -78,10 +75,10 @@ runHsbot die_msgs = do
             channels = configChannels config
             cmdPrfx  = configCmdPrefix config 
         case configPassword config of
-            Just pass -> liftIO . sendStr env connhdl tlsCtx . strEncode $ IRC.Message Nothing (S.pack "PASS") [(S.pack pass)]
+            Just pass -> liftIO . sendStr env connhdl tlsCtx . U.toString . IRC.encode $ IRC.Message Nothing (U.fromString "PASS") [U.fromString pass]
             Nothing -> return ()
-        liftIO . sendStr env connhdl tlsCtx . strEncode $ IRC.nick (S.pack nickname)
-        liftIO . sendStr env connhdl tlsCtx . strEncode $ IRC.user (S.pack nickname) (S.pack hostname) (S.pack "*") $ S.pack (configRealname config)
+        liftIO . sendStr env connhdl tlsCtx . U.toString . IRC.encode $ IRC.nick (U.fromString nickname)
+        liftIO . sendStr env connhdl tlsCtx . U.toString . IRC.encode $ IRC.user (U.fromString nickname) (U.fromString hostname) (U.fromString "*") $ U.fromString (configRealname config)
         -- Finally we set the new bot state
         asks envBotState >>= liftIO . flip putMVar BotState { botPlugins  = M.empty
                                                             , botPrefix   = cmdPrfx 
@@ -105,11 +102,11 @@ runHsbot die_msgs = do
         asks envConfig >>= mapM_ loadPlugin . configPlugins
         -- Finally we spawn the main bot loop
         (liftIO . forkIO $ runReaderT botLoop env) >>= addThreadIdToQuitMVar
-        liftIO $ threadDelay 1000000
+        liftIO $ threadDelay 4000000
         -- Then we join channels
-        mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx . strEncode . IRC.joinChan $ S.pack channel) channels
-        -- We advertise any death message we should
-        mapM_ (\msg -> mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx $ S.unpack . IRC.encode $ IRC.Message Nothing (S.pack "PRIVMSG") [S.pack channel, S.pack msg]) channels) die_msgs
+        mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx . U.toString . IRC.encode . IRC.joinChan $ U.fromString channel) channels
+        -- We advertise any death message we should              strEncode
+        mapM_ (\msg -> mapM_ (\channel -> liftIO . sendStr env connhdl tlsCtx $ U.toString . IRC.encode $ IRC.Message Nothing (U.fromString "PRIVMSG") [U.fromString channel, U.fromString msg]) channels) die_msgs
         -- We wait for the quit signal
         code <- asks envQuitMv >>= liftIO . takeMVar
         -- and we clean things up
@@ -125,7 +122,8 @@ botReader env handle mctx chan = do
     botTrueReader :: String -> IO IOException
     botTrueReader buff = do
         str <- readThis handle mctx
-        case parse messages [] (buff ++ str) of
+        case parse messages [] (buff ++
+         str) of
             Right (msgs, trash) -> do
                 mapM_ handleMessage msgs
                 botTrueReader trash
@@ -142,13 +140,13 @@ botReader env handle mctx chan = do
         return $ mess ++ end
     handleMessage :: String -> IO ()
     handleMessage str =
-        case IRC.decode (S.pack str) of
+        case IRC.decode (U.fromString str) of
             Just msg -> do
                 debugM "Hsbot.Reader" $ "<-- " ++ show msg
                 writeChan chan $ IncomingMsg msg
             Nothing -> return ()
     readThis :: Handle -> Maybe Context -> IO String
-    readThis _ (Just ctx) = fmap S.unpack (recvData ctx)
+    readThis _ (Just ctx) = fmap U.toString (recvData ctx)
     readThis h Nothing = hGetLine h >>= \s -> return $ s ++ "\n"
 
 botLoop :: Env IO ()
@@ -164,7 +162,7 @@ botLoop = forever $ do
             let connhdl  = envHandle env
                 tlsCtx   = envTLSCtx env
             liftIO $ debugM "Hsbot.Loop" $ "--> " ++ show outMsg
-            liftIO . sendStr env connhdl tlsCtx $ S.unpack (IRC.encode outMsg)
+            liftIO . sendStr env connhdl tlsCtx $ U.toString (IRC.encode outMsg)
 
 terminateHsbot :: Env IO ()
 terminateHsbot = do

@@ -1,17 +1,17 @@
 Name:               hsbot
-Version:            0.4.18
+Version:            0.5.15.2
 Cabal-version:      >=1.2
-Synopsis:           A multipurposes IRC bot
+Synopsis:           A flexible IRC bot
 Description:
-  hsbot is a multi-purpose bot, written slowly, as long as I learned more
-  haskell. It features IRC integration and some plugins. I tried to design
-  a bot architecture as modular and as flexible as possible.
-Homepage:           http://hsbot.adyxax.org/
+  hsbot is a general-purpose IRC bot, configured
+  and extended with haskell.
+Homepage:           http://www.gitub.com/Sornaensis/hsbot/
 License:            BSD3
 License-file:       LICENSE
-Author:             Julien Dessaux
-Maintainer:         judessaux@gmail.com
-Copyright:          Copyright (c) 2010 Julien Dessaux
+Author:             Julien Dessaux, Kyle Jones
+Maintainer:         sornaensis@gmail.com
+Copyright:          Copyright (c) 2010 Julien Dessaux,
+                    Copyright (c) 2015 Kyle Jones
 Category:           Hsbot
 Build-type:         Simple
 
@@ -24,8 +24,15 @@ Library
                     Hsbot.Message
                     Hsbot.Plugin
                     Hsbot.Plugin.Admin
+                    Hsbot.Plugin.Alias
+                    Hsbot.Plugin.Buffer
+                    Hsbot.Plugin.CTCP
+                    Hsbot.Plugin.Echo
+                    Hsbot.Plugin.Help
+                    Hsbot.Plugin.Mueval
                     Hsbot.Plugin.Ping
-                    Hsbot.Plugin.Quote
+                    Hsbot.Plugin.Converter
+                    Hsbot.Plugin.Scheme
                     Hsbot.Types
                     Hsbot.Utils
   Extensions:       FlexibleContexts ScopedTypeVariables PackageImports OverloadedStrings
@@ -35,19 +42,29 @@ Library
                     certificate,
                     containers,
                     cprng-aes,
+                    curl,
                     cryptocipher,
                     dyre,
                     data-default,
                     data-default-class,
+                    hint,
                     hslogger,
+                    HTTP,
                     irc,
                     mtl,
+                    mueval,
                     network,
                     parsec,
+                    process,
+                    quantities,
                     random,
                     safecopy,
+                    split,
+                    text,
                     tls == 1.2.8,
                     time,
+                    transformers,
+                    unix,
                     utf8-string,
                     xdg-basedir
 

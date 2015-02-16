@@ -1,5 +1,6 @@
 module Hsbot
     ( hsbot
+    , hsbot'
     ) where
 
 import qualified Config.Dyre as Dyre
@@ -7,6 +8,8 @@ import Config.Dyre.Relaunch
 import Control.Monad.Reader
 import qualified Data.Map as M
 import System.Log.Logger
+
+import System.Environment.XDG.BaseDir
 
 import Hsbot.Core
 import Hsbot.Types
@@ -24,9 +27,9 @@ startHsbot config = do
     dieMsgs <- case M.lookup "die_msg" buffer of
         Just dieMsg -> case reads dieMsg :: [(BotStatus, String)] of
             (status, _):_ -> case status of
-                BotReload reason -> return ["hsbot reloaded, reason : " ++ reason]
-                BotRestart (reason, Just info) -> return ["hsbot restarted, reason : " ++ reason, "additional information: " ++ info]
-                BotRestart (reason, Nothing) -> return ["hsbot restarted, reason : " ++ reason]
+                BotReload reason -> return ["Bot reloaded, reason : " ++ reason]
+                BotRestart (reason, Just info) -> return ["Bot restarted, reason : " ++ reason, "additional information: " ++ info]
+                BotRestart (reason, Nothing) -> return ["Bot restarted, reason : " ++ reason]
                 BotExit -> return []
             _ -> return ["hsbot die_msg parsing error, this should not happen"]
         Nothing -> return []
@@ -48,9 +51,17 @@ startHsbot config = do
              runReaderT terminateHsbot hsbotEnv
              relaunchWithTextState (State $ M.singleton "die_msg" . show $ BotRestart reason) Nothing
 
-hsbot :: Config -> IO ()
-hsbot = Dyre.wrapMain $ Dyre.defaultParams
+hsbot' :: Config -> IO ()
+hsbot' = Dyre.wrapMain $ Dyre.defaultParams
     { Dyre.projectName = "hsbot"
+    , Dyre.configDir   = Just $ System.Environment.XDG.BaseDir.getUserConfigDir "hsbot" 
     , Dyre.realMain    = startHsbot
     , Dyre.showError   = \config err -> config { configErrors = Just err } }
 
+hsbot :: String -> Config -> IO ()
+hsbot []      = hsbot'
+hsbot appName = Dyre.wrapMain $ Dyre.defaultParams
+    { Dyre.projectName = appName
+    , Dyre.configDir   = Just $ System.Environment.XDG.BaseDir.getUserConfigDir "hsbot" 
+    , Dyre.realMain    = startHsbot
+    , Dyre.showError   = \config err -> config { configErrors = Just err } }
