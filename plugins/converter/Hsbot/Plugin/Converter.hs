@@ -94,15 +94,15 @@ theUnitConvert = forever $ readMsg >>= eval
         where
     eval _ = return ()
 
-egoBotFromString :: String -> Either QuantityError Quantity
+egoBotFromString :: String -> Either (QuantityError Double) (Quantity Double)
 egoBotFromString = do
                    let (Right d) = readDefinitions egoBotDefs
                    fromString' d
 
-egoBotFromString' :: String -> String -> Either QuantityError Quantity 
+egoBotFromString' :: String -> String -> Either (QuantityError Double) (Quantity  Double)
 egoBotFromString' defs = do
-                        let (Right d) = readDefinitions $ egoBotDefs ++ defs 
-                        fromString' d
+                         let (Right d) = readDefinitions $ egoBotDefs ++ defs 
+                         fromString' d
 
 egoBotDefs :: String 
 egoBotDefs = unlines [
