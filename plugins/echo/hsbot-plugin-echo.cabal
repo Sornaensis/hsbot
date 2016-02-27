@@ -1,0 +1,30 @@
+Name:               hsbot-plugin-echo
+Version:            0.1
+Cabal-version:      >=1.2
+Synopsis:           Hsbot2 Echo Plugin
+Description:
+  Hsbot2 Plugin for echoing text
+Homepage:           http://www.gitub.com/Sornaensis/hsbot2/
+License:            BSD3
+License-file:       ../../LICENSE
+Author:             Julien Dessaux, Kyle Jones
+Maintainer:         sornaensis@gmail.com
+Copyright:          Copyright (c) 2010 Julien Dessaux,
+                    Copyright (c) 2015 Kyle Jones
+Category:           Hsbot
+Build-type:         Simple
+
+
+Library
+  ghc-options: -Wall 
+  exposed-modules:  Hsbot.Plugin.Echo
+  Extensions:       DeriveDataTypeable FlexibleContexts ScopedTypeVariables PackageImports OverloadedStrings
+  Build-depends:    base >= 4.1 && < 5,
+                    containers,
+                    filepath,
+                    hsbot >= 0.5.15.2,
+                    irc,
+                    mtl,
+                    utf8-string
+
+
