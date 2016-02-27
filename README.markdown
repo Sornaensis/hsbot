@@ -20,7 +20,7 @@ Configuration goes in $HOME/.config/hsbot/hsbot.hs, here is a minimal example :
                             , configTLS       = noSSL
                             , configPort      = PortNumber 1337
                             , configPassword  = Nothing
-                            , configCmdPrefix = "!" -- Bot plugin commands prefixed with !<command> or <bot-nickname> <command> 
+                            , configCmdPrefix = "!" -- | Bot plugin commands prefixed with !<command> or <bot-nickname> <command> 
                             , configChannels  = ["#hsbot", "#geek"]
                             , configNicknames = ["hsbot"]
                             , configRealname  = "The One True bot, with its haskell soul."
