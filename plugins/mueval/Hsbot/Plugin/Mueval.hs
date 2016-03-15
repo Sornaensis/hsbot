@@ -99,8 +99,11 @@ evalLambda lets msg args =
                                 Just a -> case a of
                                             ExitSuccess   -> exitWith a
                                             ExitFailure _ -> exitWith a
-                   hGetContents hout ) >>= mapM_ (answerMsg msg . (\x -> if length x > 500 then take 500 x ++ "..." else x)) . take 2 . lines 
-                                                 >> return (Just (toDyn NoLets))
+                   o <- hGetContents hout
+                   c <-  waitForProcess hdl
+                   return (o,c)) >>= \(out, e) -> case e of
+                                                   ExitSuccess   -> (mapM_ (answerMsgNick msg . (\x -> if length x > 500 then take 500 x ++ "..." else x)) . take 2 . lines)  out >> return (Just (toDyn NoLets))
+                                                   ExitFailure _ -> answerMsgNick msg "Time Limit Exceeded" >> return (Just (toDyn NoLets))
 
 evalType :: [String] -> IRC.Message -> [String] -> Plugin (Env IO) (Maybe PluginRet)
 evalType _ _ [] = return (Just (toDyn NoLets)) 
@@ -135,7 +138,7 @@ evalType lets msg args =
                                                     [ "-l"
                                                     , egoBotDefFile </> "mueval/EgoBot.hs"
                                                     , "-i"
-                                                    -- , "-T "
+                                                    , "-T"
                                                     , "-e"
                                                     , unwords lets ++ " " ++ unwords args]){std_out = CreatePipe}
                    _ <- forkIO $ do
@@ -150,7 +153,7 @@ evalType lets msg args =
                                 Just a -> case a of
                                             ExitSuccess   -> exitWith a
                                             ExitFailure _ -> exitWith a
-                   hGetContents hout ) >>= mapM_ (answerMsg msg . (\x -> if length x > 500 then take 500 x ++ "..." else x)) . tail . take 2 . lines 
+                   hGetContents hout ) >>= mapM_ (answerMsgNick msg . (\x -> if length x > 500 then take 500 x ++ "..." else x)) . tail . take 2 . lines 
                                                  >> return (Just (toDyn NoLets))
 
 
@@ -170,8 +173,8 @@ theMueval = forever $ eval []
     eval' :: [String] -> Message -> Plugin (Env IO) [Maybe PluginRet]
     eval' lets (IncomingMsg msg)
          | IRC.msg_command msg == U.fromString "PRIVMSG" = 
-             do cmdArgs <- lift $ getCommand msg
-                mapM (parseCommand msg cmdArgs) $ theCmds lets
+             do cmdArgs <- lift . getCommand $  msg
+                mapM (parseCommand msg $ map (map (\x -> if x == '“' then '\"' else x))  cmdArgs) $ theCmds lets
          | otherwise = return []
     eval' _ _ = return []
 
